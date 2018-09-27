@@ -1,37 +1,20 @@
+[![Runbot Status](https://runbot.odoo-community.org/runbot/badge/flat/209/12.0.svg)](https://runbot.odoo-community.org/runbot/repo/github-com-oca-connector-odoo2odoo-209)
+[![Build Status](https://travis-ci.org/OCA/connector-odoo2odoo.svg?branch=12.0)](https://travis-ci.org/OCA/connector-odoo2odoo)
+[![Coverage Status](https://coveralls.io/repos/OCA/connector-odoo2odoo/badge.svg?branch=12.0&service=github)](https://coveralls.io/github/OCA/connector-odoo2odoo?branch=12.0)
+[![Code Climate](https://codeclimate.com/github/OCA/connector-odoo2odoo/badges/gpa.svg)](https://codeclimate.com/github/OCA/connector-odoo2odoo)
 
-[![Runboat](https://img.shields.io/badge/runboat-Try%20me-875A7B.png)](https://runboat.odoo-community.org/builds?repo=OCA/connector-odoo2odoo&target_branch=15.0)
-[![Pre-commit Status](https://github.com/OCA/connector-odoo2odoo/actions/workflows/pre-commit.yml/badge.svg?branch=15.0)](https://github.com/OCA/connector-odoo2odoo/actions/workflows/pre-commit.yml?query=branch%3A15.0)
-[![Build Status](https://github.com/OCA/connector-odoo2odoo/actions/workflows/test.yml/badge.svg?branch=15.0)](https://github.com/OCA/connector-odoo2odoo/actions/workflows/test.yml?query=branch%3A15.0)
-[![codecov](https://codecov.io/gh/OCA/connector-odoo2odoo/branch/15.0/graph/badge.svg)](https://codecov.io/gh/OCA/connector-odoo2odoo)
-[![Translation Status](https://translation.odoo-community.org/widgets/connector-odoo2odoo-15-0/-/svg-badge.svg)](https://translation.odoo-community.org/engage/connector-odoo2odoo-15-0/?utm_source=widget)
+# Connector Odoo2Odoo
 
-<!-- /!\ do not modify above this line -->
+Intercompany process connector, based on odoo-connector
 
-# connector-odoo2odoo
 
-TODO: add repo description.
 
-<!-- /!\ do not modify below this line -->
-
-<!-- prettier-ignore-start -->
-
-[//]: # (addons)
-
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
-
-[//]: # (end addons)
-
-<!-- prettier-ignore-end -->
-
-## Licenses
-
-This repository is licensed under [AGPL-3.0](LICENSE).
-
-However, each module can have a totally different license, as long as they adhere to Odoo Community Association (OCA)
-policy. Consult each module's `__manifest__.py` file, which contains a `license` key
-that explains its license.
+Translation Status
+------------------
+[![Transifex Status](https://www.transifex.com/projects/p/OCA-connector-odoo2odoo-12-0/chart/image_png)](https://www.transifex.com/projects/p/OCA-connector-odoo2odoo-12-0)
 
 ----
-OCA, or the [Odoo Community Association](http://odoo-community.org/), is a nonprofit
-organization whose mission is to support the collaborative development of Odoo features
-and promote its widespread use.
+
+OCA, or the [Odoo Community Association](http://odoo-community.org/), is a nonprofit organization whose
+mission is to support the collaborative development of Odoo features and
+promote its widespread use.
