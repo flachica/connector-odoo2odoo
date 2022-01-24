@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright <YEAR(S)> <AUTHOR(S)>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
@@ -7,6 +6,7 @@ from odoo import _, exceptions
 
 class ModuleNameValidationError(exceptions.ValidationError):
     """Base class for this module's validation errors."""
+
     def __init__(self, *args, **kwargs):
         self._args, self._kwargs = args, kwargs
         value = self._message()

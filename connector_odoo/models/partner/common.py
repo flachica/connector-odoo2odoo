@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2013-2017 Camptocamp SA
 # © 2016 Sodexis
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
@@ -6,10 +5,9 @@
 import ast
 import logging
 
-from odoo import api, fields, models
+from odoo import fields, models
+
 from odoo.addons.component.core import Component
-# from odoo.addons.queue_job.job import job
-from odoo.addons.component_event.components.event import skip_if
 
 _logger = logging.getLogger(__name__)
 
@@ -20,7 +18,14 @@ class OdooPartner(models.Model):
     _inherits = {"res.partner": "odoo_id"}
     _description = "External Odoo Partner"
 
-    @api.multi
+    _sql_constraints = [
+        (
+            "external_id",
+            "UNIQUE(external_id)",
+            "External ID (external_id) must be unique!",
+        ),
+    ]
+
     def name_get(self):
         result = []
         for op in self:
@@ -30,6 +35,14 @@ class OdooPartner(models.Model):
             result.append((op.id, name))
 
         return result
+
+    def resync(self):
+        if self.backend_id.main_record == "odoo":
+            return self.with_delay().export_record(self.backend_id)
+        else:
+            return self.with_delay().import_record(
+                self.backend_id, self.external_id, force=True
+            )
 
 
 class Partner(models.Model):
@@ -49,8 +62,8 @@ class PartnerAdapter(Component):
 
     _odoo_model = "res.partner"
 
-    def search(self, filters=None, model=None):
-        """ Search records according to some criteria
+    def search(self, filters=None, model=None, offset=0, limit=None, order=None):
+        """Search records according to some criteria
         and returns a list of ids
 
         :rtype: list
@@ -60,31 +73,14 @@ class PartnerAdapter(Component):
         ext_filter = ast.literal_eval(
             str(self.backend_record.external_partner_domain_filter)
         )
-        filters += ext_filter
-        return super(PartnerAdapter, self).search(filters=filters, model=model)
+        filters += ext_filter or []
+        return super(PartnerAdapter, self).search(
+            filters=filters, model=model, offset=offset, limit=limit, order=order
+        )
 
 
 class PartnerListener(Component):
-    _name = 'res.partner.listener'
-    _inherit = 'base.connector.listener'
-    _apply_on = ['res.partner']
-    _usage = 'event.listener'
-
-    @skip_if(lambda self, record, **kwargs: self.no_connector_export(record))
-    def on_record_create(self, record, fields=None):
-        # FIXME: do the proper way
-        bind_model = self.env['odoo.res.partner']
-        backend = self.env['odoo.backend'].search([])
-        binding = bind_model.create({
-            "backend_id": backend[0].id,
-            "odoo_id": record.id,
-            "external_id": 0,
-        })
-        binding.with_delay().export_record(backend)
-
-    """
-    @skip_if(lambda self, record, **kwargs: self.no_connector_export(record))
-    def on_record_write(self, record, fields=None):
-        self.binder.to_external(parent, wrap=False)
-        record.with_delay().export_record(backend=record.backend_id)
-    """
+    _name = "res.partner.listener"
+    _inherit = "base.connector.listener"
+    _apply_on = ["res.partner"]
+    _usage = "event.listener"

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2017 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
@@ -6,7 +5,7 @@ from odoo.addons.component.core import Component
 
 
 class MetadataBatchImporter(Component):
-    """ Import the records directly, without delaying the jobs.
+    """Import the records directly, without delaying the jobs.
 
     Import the Odoo Minimal Datas :
     * UOM

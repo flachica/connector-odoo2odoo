@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2013-2017 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
@@ -11,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 
 class ProductAttributeImporter(Component):
-    """ Import Odoo UOM """
+    """Import Odoo UOM"""
 
     _name = "odoo.product.attribute.importer"
     _inherit = "odoo.importer"
@@ -29,12 +28,10 @@ class ProductAttributeMapper(Component):
     @mapping
     def check_att_exists(self, record):
         # TODO: Improve and check family, factor etc...
-        att_id = self.env["product.attribute"].search(
-            [
-                ("name", "=", record.name),
-                ("create_variant", "=", record["create_variant"]),
-            ]
-        )
+        domain = [("name", "=", record.name)]
+        if hasattr(record, "create_variant"):
+            filter.append(("create_variant", "=", record.create_variant))
+        att_id = self.env["product.attribute"].search(domain)
         res = {}
         if len(att_id) == 1:
             res.update({"odoo_id": att_id.id})
@@ -44,6 +41,6 @@ class ProductAttributeMapper(Component):
     @mapping
     def create_variant(self, record):
         res = {"create_variant": "no_variant"}
-        if record.create_variant:
+        if hasattr(record, "create_variant") and (record.create_variant == "always"):
             res.update(create_variant="always")
         return res
