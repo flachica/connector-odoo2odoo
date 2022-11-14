@@ -153,7 +153,10 @@ class OdooImporter(AbstractComponent):
                 and self.odoo_record.create_date
             )
         )
-        return binding and binding.sync_date > last_remote_modification
+        return (
+            binding
+            and (binding.sync_date or binding.write_date) > last_remote_modification
+        )
 
     def _get_binding(self):
         return self.binder.to_internal(self.external_id)
