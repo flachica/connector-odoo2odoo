@@ -40,6 +40,7 @@
         "views/account_account.xml",
         "views/ir_attachment.xml",
         "views/ir_translation.xml",
+        "views/product_pricelist.xml",
         "views/res_currency.xml",
         "views/purchase_order.xml",
         "views/stock_warehouse.xml",

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="product_pricelist_view" model="ir.ui.view">
+      <field name="name">product.pricelist.form</field>
+      <field name="model">product.pricelist</field>
+      <field name="inherit_id" ref="product.product_pricelist_view" />
+      <field name="arch" type="xml">
+        <xpath expr="//notebook/page[@name='pricelist_config']" position="after">
+          <page name="connector" string="Connector">
+            <group string="Odoo Binding">
+                <field name="bind_ids" readonly="1" nolabel="1" />
+            </group>
+          </page>
+        </xpath>
+
+      </field>
+    </record>
+
+    <record id="product_pricelist_search_view" model="ir.ui.view">
+      <field name="name">odoo.product.pricelist.search</field>
+      <field name="model">odoo.product.pricelist</field>
+      <field name="arch" type="xml">
+        <search>
+          <field name="name" />
+          <field name="odoo_id" />
+          <field name="backend_id" />
+          <field name="external_id" />
+        </search>
+      </field>
+    </record>
+
+    <record id="product_pricelist_tree_view" model="ir.ui.view">
+      <field name="name">odoo.product.pricelist.tree</field>
+      <field name="model">odoo.product.pricelist</field>
+      <field name="arch" type="xml">
+        <tree>
+          <field name="id" />
+          <field name="odoo_id" />
+          <field name="backend_id" />
+          <field name="external_id" />
+          <field name="sync_date" />
+          <button name="resync" type="object" string="Resync" />
+        </tree>
+      </field>
+    </record>
+
+    <record id="product_pricelist_form_view" model="ir.ui.view">
+      <field name="name">odoo.product.pricelist.form</field>
+      <field name="model">odoo.product.pricelist</field>
+      <field name="arch" type="xml">
+        <form>
+          <header>
+            <button name="resync" type="object" string="Resync" />
+          </header>
+          <sheet>
+            <group>
+              <field name="odoo_id" readonly="0" />
+              <field name="id" readonly="0" />
+              <field name="backend_id" readonly="1" />
+              <field name="external_id" readonly="0" />
+              <field name="sync_date" readonly="0" />
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="view_odoo_product_pricelist_search" model="ir.ui.view">
+        <field name="name">odoo.product.pricelist.search</field>
+        <field name="model">odoo.product.pricelist</field>
+        <field eval="100" name="priority" />
+        <field name="arch" type="xml">
+            <search string="Search">
+                <field name="name" />
+                <field name="external_id" />
+                <field name="odoo_id" />
+                <field name="backend_id" />
+            </search>
+        </field>
+    </record>
+
+</odoo>

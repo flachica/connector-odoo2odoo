@@ -157,6 +157,19 @@
         action="action_odoo_account_account"
     />
 
+    <record id="action_odoo_product_pricelist" model="ir.actions.act_window">
+        <field name="name">Odoo Pricelist</field>
+        <field name="res_model">odoo.product.pricelist</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="menu_odoo_external_product_pricelist"
+        name="External Pricelist"
+        parent="menu_odoo_external_objects"
+        action="action_odoo_product_pricelist"
+    />
+
     <record id="action_odoo_res_currency" model="ir.actions.act_window">
         <field name="name">Odoo Currency</field>
         <field name="res_model">odoo.res.currency</field>

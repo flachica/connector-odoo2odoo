@@ -127,6 +127,10 @@ class ProductPricelistItemImporter(Component):
     _inherit = "odoo.importer"
     _apply_on = ["odoo.product.pricelist.item"]
 
+    def _must_skip(self):
+        """Return True if the import can be skipped."""
+        return not hasattr(self.odoo_record, "pricelist_id")
+
     def _import_dependencies(self, force=False):
         """Import the dependencies for the record"""
         record = self.odoo_record
