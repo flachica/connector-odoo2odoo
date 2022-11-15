@@ -57,9 +57,6 @@ class SaleOrderImporter(Component):
     def _import_dependencies(self, force=False):
         """Import the dependencies for the record"""
         self._import_dependency(
-            self.odoo_record.pricelist_id.id, "odoo.product.pricelist", force=force
-        )
-        self._import_dependency(
             self.odoo_record.partner_id.id, "odoo.res.partner", force=force
         )
         if self.backend_record.version != "6.1":
