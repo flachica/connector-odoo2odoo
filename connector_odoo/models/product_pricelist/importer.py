@@ -46,9 +46,6 @@ class ProductPricelistImporter(Component):
     _inherit = "odoo.importer"
     _apply_on = ["odoo.product.pricelist"]
 
-    def _import_dependencies(self, force=False):
-        """Import the dependencies for the record"""
-
 
 class ProductPricelistImportMapper(Component):
     _name = "odoo.product.pricelist.import.mapper"

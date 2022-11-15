@@ -46,6 +46,14 @@ class SaleOrderImporter(Component):
     _inherit = "odoo.importer"
     _apply_on = ["odoo.sale.order"]
 
+    def _must_skip(self):
+        binding = self.binder.to_internal(self.external_id)
+        if binding and len(binding.picking_ids) < len(
+            list(self.odoo_record.picking_ids)
+        ):
+            return False
+        return super()._must_skip()
+
     def _import_dependencies(self, force=False):
         """Import the dependencies for the record"""
         self._import_dependency(

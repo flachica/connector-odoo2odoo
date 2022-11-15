@@ -146,17 +146,21 @@ class OdooImporter(AbstractComponent):
         :returns: None | str | unicode
         """
         binding = self.binder.to_internal(self.external_id)
-        last_remote_modification = binding and (
-            self.odoo_record.write_date
-            or (
-                hasattr(self.odoo_record, "create_date")
-                and self.odoo_record.create_date
+        if binding:
+            sync_date = binding.sync_date
+            if not sync_date:
+                sync_date = binding.create_date
+            last_remote_modification = (
+                hasattr(self.odoo_record, "write_date") and self.odoo_record.write_date
             )
-        )
-        return (
-            binding
-            and (binding.sync_date or binding.write_date) > last_remote_modification
-        )
+            if not last_remote_modification:
+                last_remote_modification = (
+                    hasattr(self.odoo_record, "create_date")
+                    and self.odoo_record.create_date
+                )
+            return sync_date > last_remote_modification
+        else:
+            return False
 
     def _get_binding(self):
         return self.binder.to_internal(self.external_id)
