@@ -149,6 +149,8 @@ class OdooImporter(AbstractComponent):
         if binding:
             sync_date = binding.sync_date
             if not sync_date:
+                sync_date = binding.write_date
+            if not sync_date:
                 sync_date = binding.create_date
             last_remote_modification = (
                 hasattr(self.odoo_record, "write_date") and self.odoo_record.write_date
@@ -158,6 +160,8 @@ class OdooImporter(AbstractComponent):
                     hasattr(self.odoo_record, "create_date")
                     and self.odoo_record.create_date
                 )
+            if not sync_date or not last_remote_modification:
+                return False
             return sync_date > last_remote_modification
         else:
             return False
