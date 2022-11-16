@@ -253,6 +253,7 @@ class OdooBackend(models.Model):
         help="Import lines after import header document "
         "(sale, purchase or picking) on delayed jobs"
     )
+    delayed_import_basic_data = fields.Boolean(help="Import basic data in delayed jobs")
 
     default_import_stock = fields.Boolean("Import Stock")
     import_stock_from_date = fields.Datetime()

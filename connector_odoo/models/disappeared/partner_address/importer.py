@@ -49,17 +49,15 @@ class PartnerAddressDisappearedImporter(Component):
         if address_ids:
             i = 0
             for address_id in address_ids:
-                # Creating new jobs are needed to avoid to maintain connection open
-                # in large number of records
-                # Jobs function only can be on models.Model, not in this class
                 i += 1
                 _logger.info(
                     "Sending address {} of {} to be processed as a new job".format(
                         i, total
                     )
                 )
-                self.env["odoo.res.partner.address.disappeared"].import_address(
-                    self.backend_record, address_id, external_id
-                )
+                model = self.env["odoo.res.partner.address.disappeared"]
+                if self.backend_record.delayed_import_basic_data:
+                    model = model.with_delay()
+                model.import_address(self.backend_record, address_id, external_id)
         super()._init_import(binding, external_id)
         return False

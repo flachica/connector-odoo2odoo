@@ -335,6 +335,7 @@
                     <field name="main_record" />
                     <field name="read_operation_from" />
                     <field name="delayed_import_lines" />
+                    <field name="delayed_import_basic_data" />
                 </group>
                 <group string="Purchases">
                     <group>
