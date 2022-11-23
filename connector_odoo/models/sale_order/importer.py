@@ -81,27 +81,18 @@ class SaleOrderImporter(Component):
         if self.odoo_record.order_line:
             delayed_line_ids = []
             for line_id in self.odoo_record.order_line:
-                order_line_model = self.env["odoo.sale.order.line"]
-                if self.backend_record.delayed_import_lines:
-                    order_line_model = order_line_model.with_delay()
+                order_line_model = self.env["odoo.sale.order.line"].with_delay()
                 delayed_line_id = order_line_model.import_record(
                     self.backend_record, line_id.id, force
                 )
-                if self.backend_record.delayed_import_lines:
-                    delayed_line_id = self.env["queue.job"].search(
-                        [("uuid", "=", delayed_line_id.uuid)]
-                    )
-                    delayed_line_ids.append(delayed_line_id.id)
-            if self.backend_record.delayed_import_lines:
-                binding.queue_job_ids = [
-                    (6, 0, (delayed_line_ids + binding.queue_job_ids.ids))
-                ]
-        if not self.backend_record.delayed_import_lines:
-            binding._set_state()
-            self.env["odoo.stock.picking"].with_delay().import_batch(
-                self.backend_record,
-                [("sale_id", "=", self.odoo_record.id)],
-            )
+                delayed_line_id = self.env["queue.job"].search(
+                    [("uuid", "=", delayed_line_id.uuid)]
+                )
+                delayed_line_ids.append(delayed_line_id.id)
+
+            binding.queue_job_ids = [
+                (6, 0, (delayed_line_ids + binding.queue_job_ids.ids))
+            ]
         return res
 
 
@@ -115,6 +106,10 @@ class SaleOrderImportMapper(Component):
         ("name", "name"),
         ("state", "backend_state"),
     ]
+
+    @mapping
+    def ignore_exception(self, record):
+        return {"ignore_exception": record.shipped}
 
     @mapping
     def backend_amount_total(self, record):
@@ -214,29 +209,28 @@ class SaleOrderLineImporter(Component):
 
     def _after_import(self, binding, force=False):
         res = super()._after_import(binding, force)
-        if self.backend_record.delayed_import_lines:
-            pending = binding.order_id.queue_job_ids.filtered(
-                lambda x: x.state not in ["done", "cancelled"]
-                and x.args[1] != self.odoo_record.id
+        pending = binding.order_id.queue_job_ids.filtered(
+            lambda x: x.state not in ["done", "cancelled"]
+            and x.args[1] != self.odoo_record.id
+        )
+        if "failed" in pending.mapped("state"):
+            _logger.error(
+                "Job's {} failed. State can't be changed of Picking {} of sale {}".format(
+                    pending.mapped("uuid"),
+                    self.odoo_record.name,
+                    self.odoo_record.sale_id.name,
+                )
             )
-            if "failed" in pending.mapped("state"):
-                _logger.error(
-                    "Job's {} failed. State can't be changed of Picking {} of sale {}".format(
-                        pending.mapped("uuid"),
-                        self.odoo_record.name,
-                        self.odoo_record.sale_id.name,
-                    )
-                )
-            if not pending:
-                binding = self.env["odoo.sale.order"].search(
-                    [("odoo_id", "=", binding.order_id.id)]
-                )
-                if not len(binding.picking_ids):
-                    binding._set_state()
-                self.env["odoo.stock.picking"].with_delay().import_batch(
-                    self.backend_record,
-                    [("sale_id", "=", self.odoo_record.order_id.id)],
-                )
+        if not pending:
+            binding = self.env["odoo.sale.order"].search(
+                [("odoo_id", "=", binding.order_id.id)]
+            )
+            if not len(binding.picking_ids):
+                binding._set_state()
+            self.env["odoo.stock.picking"].with_delay().import_batch(
+                self.backend_record,
+                [("sale_id", "=", self.odoo_record.order_id.id)],
+            )
         return res
 
 

@@ -50,7 +50,7 @@ class StockPickingImporter(Component):
         binding = self._get_binding()
         if binding and binding.state in ["done", "cancel"]:
             return True
-        return False
+        return super()._must_skip()
 
     def _import_dependencies(self, force=False):
         """Import the dependencies for the record"""
@@ -73,23 +73,18 @@ class StockPickingImporter(Component):
         if self.odoo_record.move_lines:
             delayed_line_ids = []
             for line_id in self.odoo_record.move_lines:
-                stock_move_model = self.env["odoo.stock.move"]
-                if self.backend_record.delayed_import_lines:
-                    stock_move_model = stock_move_model.with_delay()
+                stock_move_model = self.env["odoo.stock.move"].with_delay()
                 delayed_line_id = stock_move_model.import_record(
                     self.backend_record, line_id.id, force=True
                 )
-                if self.backend_record.delayed_import_lines:
-                    delayed_line_id = self.env["queue.job"].search(
-                        [("uuid", "=", delayed_line_id.uuid)]
-                    )
-                    delayed_line_ids.append(delayed_line_id.id)
-            if self.backend_record.delayed_import_lines:
-                binding.queue_job_ids = [
-                    (6, 0, (delayed_line_ids + binding.queue_job_ids.ids))
-                ]
-            else:
-                binding.with_delay()._set_state()
+                delayed_line_id = self.env["queue.job"].search(
+                    [("uuid", "=", delayed_line_id.uuid)]
+                )
+                delayed_line_ids.append(delayed_line_id.id)
+
+            binding.queue_job_ids = [
+                (6, 0, (delayed_line_ids + binding.queue_job_ids.ids))
+            ]
         return res
 
     def _get_binding_odoo_id_changed(self, binding):
@@ -146,6 +141,9 @@ class OdooPickingMapper(Component):
     def odoo_id(self, record):
         binder = self.binder_for("odoo.stock.picking")
         picking_id = binder.to_internal(record.id, unwrap=True)
+        if picking_id:
+            return {"odoo_id": picking_id.id}
+        picking_id = self.env["stock.picking"].search([("name", "=", record.name)])
         if picking_id:
             return {"odoo_id": picking_id.id}
         if (record.sale_id or record.purchase_id) and record.move_lines:
@@ -249,18 +247,39 @@ class OdooPickingMapper(Component):
 
     @mapping
     def location_id(self, record):
-        binder = self.binder_for("odoo.stock.location")
-        location_id = False
-        move_id = list(record["move_lines"])[0]
-        location_id = binder.to_internal(move_id.location_id.id, unwrap=True)
-        return {"location_id": location_id.id}
+        move_id = False
+        for move in record.move_lines:
+            move_id = move
+            break
+        if not move_id:
+            return {}
+        picking_type_id = self.get_picking_type_from_external_locations(
+            "stock.picking", record, move_id.location_id, move_id.location_dest_id
+        )
+        if picking_type_id.code in ("incoming", "internal"):
+            return {"location_id": picking_type_id.default_location_dest_id.id}
+        else:
+            return {"location_id": picking_type_id.default_location_src_id.id}
 
     @mapping
     def location_dest_id(self, record):
-        binder = self.binder_for("odoo.stock.location")
-        move_id = list(record["move_lines"])[0]
-        location_dest_id = binder.to_internal(move_id.location_dest_id.id, unwrap=True)
-        return {"location_dest_id": location_dest_id.id}
+        move_id = False
+        for move in record.move_lines:
+            move_id = move
+            break
+        if not move_id:
+            return {}
+        picking_type_id = self.get_picking_type_from_external_locations(
+            "stock.picking", record, move_id.location_id, move_id.location_dest_id
+        )
+        customer_loc, supplier_loc = self.env[
+            "stock.warehouse"
+        ]._get_partner_locations()
+        return {
+            "location_dest_id": customer_loc.id
+            if picking_type_id.code == "outgoing"
+            else supplier_loc.id
+        }
 
     @mapping
     def partner_id(self, record):

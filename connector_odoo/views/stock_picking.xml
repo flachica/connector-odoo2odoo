@@ -8,7 +8,7 @@
       <field name="arch" type="xml">
         <xpath expr="//notebook" position="inside">
             <page string="Connectors">
-                <group string="Odoo Bindings">
+                <group string="Odoo Bindings" name='bindings'>
                     <field name="bind_ids" readonly="1" nolabel="1">
                         <tree>
                             <field name="backend_id" />
@@ -20,7 +20,7 @@
                         </tree>
                     </field>
                 </group>
-                <group string="Odoo Bindings (Inventory Dissapeared)">
+                <group string="Odoo Bindings (Inventory Dissapeared)" name='inventory'>
                     <field
                             name="bind_stock_inventory_dissapeared_ids"
                             readonly="1"
@@ -34,6 +34,24 @@
                         <button name="resync" type="object" string="Resync" />
                     </tree>
                 </field>
+                </group>
+                <group string="Delayed jobs" name='jobs'>
+                    <field
+                            name="queue_job_ids"
+                            readonly="1"
+                            nolabel="1"
+                            attrs="{'invisible': [('queue_job_ids', '=', False)]}"
+                        >
+                        <tree>
+                            <field name="uuid" />
+                            <field name="state" />
+                            <field name="func_string" />
+                            <field name="date_created" />
+                            <field name="date_started" />
+                            <field name="date_done" />
+                            <field name="exc_info" />
+                        </tree>
+                    </field>
                 </group>
             </page>
         </xpath>

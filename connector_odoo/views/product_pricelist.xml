@@ -57,7 +57,7 @@
             <group>
               <field name="odoo_id" readonly="0" />
               <field name="id" readonly="0" />
-              <field name="backend_id" readonly="1" />
+              <field name="backend_id" readonly="0" />
               <field name="external_id" readonly="0" />
               <field name="sync_date" readonly="0" />
             </group>

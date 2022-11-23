@@ -61,48 +61,81 @@ class StockMoveImporter(Component):
 
     def _after_import(self, binding, force=False):
         res = super()._after_import(binding, force)
-        if self.backend_record.delayed_import_lines:
-            pending = binding.picking_id.queue_job_ids.filtered(
-                lambda x: x.state != "done" and x.args[1] != self.odoo_record.id
-            )
-            if "failed" in pending.mapped("state"):
-                _logger.error(
-                    "Job's {} failed. State can't be changed of Picking {}".format(
-                        pending.mapped("uuid"), self.odoo_record.name
-                    )
+        pending = binding.picking_id.queue_job_ids.filtered(
+            lambda x: x.state != "done" and x.args[1] != self.odoo_record.id
+        )
+        if "failed" in pending.mapped("state"):
+            _logger.error(
+                "Job's {} failed. State can't be changed of Picking {}".format(
+                    pending.mapped("uuid"), self.odoo_record.name
                 )
-            ok_purchase = (
-                binding.picking_id.purchase_id
-                and binding.picking_id.purchase_id.bind_ids
-                and binding.picking_id.purchase_id.bind_ids[0].backend_picking_count
-                == len(binding.picking_id.purchase_id.picking_ids)
             )
-            ok_sale = (
-                binding.sale_line_id
-                and binding.sale_line_id.order_id.bind_ids
-                and binding.sale_line_id.order_id.bind_ids.backend_picking_count
-                == len(binding.sale_line_id.order_id.picking_ids)
-            )
-            # The last stock move of the last picking of purchase/sale
-            if not pending and ok_purchase:
-                purchase_binding = binding.purchase_line_id.order_id.bind_ids[0]
-                purchase_binding.with_delay()._set_state()
-            elif not pending and ok_sale:
-                sale_binding = binding.sale_line_id.order_id.bind_ids[0]
-                sale_binding.with_delay()._set_state()
-            # The last stock move of the last picking of picking
-            elif not pending:
-                binder = self.binder_for("odoo.stock.picking")
-                picking_binding = binder.to_internal(binding.picking_id.id)
-                if picking_binding:
-                    picking_binding.with_delay()._set_state()
-                else:
-                    inventory_binding = self.env[
-                        "odoo.stock.inventory.disappeared"
-                    ].search([("odoo_id", "=", binding.picking_id.id)])
-                    if inventory_binding:
-                        inventory_binding.with_delay()._set_inventory_state()
-
+        ok_purchase = (
+            binding.picking_id.purchase_id
+            and binding.picking_id.purchase_id.bind_ids
+            and binding.picking_id.purchase_id.bind_ids[0].backend_picking_count
+            == len(binding.picking_id.purchase_id.picking_ids)
+        )
+        ok_sale = (
+            binding.picking_id.sale_id
+            and binding.picking_id.sale_id.bind_ids
+            and binding.picking_id.sale_id.bind_ids.backend_picking_count
+            == len(binding.picking_id.sale_id.picking_ids)
+        )
+        # The last stock move of the last picking of purchase/sale
+        if not pending and ok_purchase:
+            purchase_binding = binding.picking_id.purchase_id.bind_ids[0]
+            state_job = purchase_binding.with_delay()._set_state()
+            state_job = self.env["queue.job"].search([("uuid", "=", state_job.uuid)])
+            purchase_binding.queue_job_ids = [
+                (
+                    6,
+                    0,
+                    purchase_binding.queue_job_ids.ids
+                    + [
+                        state_job.id,
+                    ],
+                )
+            ]
+        elif not pending and ok_sale:
+            sale_binding = binding.picking_id.sale_id.bind_ids[0]
+            state_job = sale_binding.with_delay()._set_state()
+            state_job = self.env["queue.job"].search([("uuid", "=", state_job.uuid)])
+            sale_binding.queue_job_ids = [
+                (
+                    6,
+                    0,
+                    sale_binding.queue_job_ids.ids
+                    + [
+                        state_job.id,
+                    ],
+                )
+            ]
+        # The last stock move of the last picking of picking
+        elif not pending:
+            binder = self.binder_for("odoo.stock.picking")
+            picking_binding = binder.to_internal(binding.picking_id.id)
+            if picking_binding:
+                state_job = picking_binding.with_delay()._set_state()
+                state_job = self.env["queue.job"].search(
+                    [("uuid", "=", state_job.uuid)]
+                )
+                picking_binding.queue_job_ids = [
+                    (
+                        6,
+                        0,
+                        picking_binding.queue_job_ids.ids
+                        + [
+                            state_job.id,
+                        ],
+                    )
+                ]
+            else:
+                inventory_binding = self.env["odoo.stock.inventory.disappeared"].search(
+                    [("odoo_id", "=", binding.picking_id.id)]
+                )
+                if inventory_binding:
+                    inventory_binding.with_delay()._set_inventory_state()
         return res
 
     def _get_binding_odoo_id_changed(self, binding):

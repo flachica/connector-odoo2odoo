@@ -191,6 +191,7 @@ class OdooBackend(models.Model):
     import_partner_from_date = fields.Datetime()
     import_user_from_date = fields.Datetime()
     import_categories_from_date = fields.Datetime()
+    import_uom_from_date = fields.Datetime()
     import_pricelist_items_from_date = fields.Datetime("Import pricelists from date")
     default_export_product = fields.Boolean("Export Products")
     export_products_from_date = fields.Datetime()
@@ -249,10 +250,6 @@ class OdooBackend(models.Model):
     import_purchase_order_from_date = fields.Datetime()
     default_import_sale_order = fields.Boolean("Import Sale orders")
     import_sale_order_from_date = fields.Datetime()
-    delayed_import_lines = fields.Boolean(
-        help="Import lines after import header document "
-        "(sale, purchase or picking) on delayed jobs"
-    )
     delayed_import_basic_data = fields.Boolean(help="Import basic data in delayed jobs")
 
     default_import_stock = fields.Boolean("Import Stock")
@@ -393,6 +390,12 @@ class OdooBackend(models.Model):
         if not self.default_import_product:
             return False
         self._import_from_date("odoo.product.category", "import_categories_from_date")
+        return True
+
+    def import_uom_uom(self):
+        if not self.default_import_product:
+            return False
+        self._import_from_date("odoo.uom.uom", "import_uom_from_date")
         return True
 
     def import_purchase_orders(self):

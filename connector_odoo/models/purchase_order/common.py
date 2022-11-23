@@ -22,6 +22,8 @@ class OdooPurchaseOrder(models.Model):
     backend_state = fields.Char()
     backend_picking_count = fields.Integer()
 
+    # Can't seem to bind picking_ids in this model/method
+    # Compute be will called in _set_state
     def _compute_import_state(self):
         for order_id in self:
             waiting = len(
@@ -51,7 +53,6 @@ class OdooPurchaseOrder(models.Model):
             ("done", "Done"),
         ],
         default="waiting",
-        compute=_compute_import_state,
     )
 
     _sql_constraints = [
@@ -87,6 +88,7 @@ class OdooPurchaseOrder(models.Model):
         # All data was imported. Set all states
         self._set_purchase_state()
         self._set_pickings_state()
+        self._compute_import_state()
 
     def _set_pickings_state(self):
         for picking_id in self.picking_ids:

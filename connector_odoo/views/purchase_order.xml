@@ -74,6 +74,7 @@
                             >
                                 <field name="backend_id" />
                                 <field name="external_id" />
+                                <field name="backend_state" readonly="1" />
                                 <field name="backend_amount_total" readonly="1" />
                                 <field name="backend_amount_tax" readonly="1" />
                                 <field name="backend_picking_count" readonly="1" />
@@ -92,6 +93,7 @@
                             <tree>
                                 <field name="uuid" />
                                 <field name="state" />
+                                <field name="func_string" />
                                 <field name="date_created" />
                                 <field name="date_started" />
                                 <field name="date_done" />

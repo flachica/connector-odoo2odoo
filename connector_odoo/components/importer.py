@@ -285,7 +285,7 @@ class OdooImporter(AbstractComponent):
         except IDMissingInBackend:
             return _("Record does no longer exist in Odoo")
 
-        if self._must_skip():
+        if not force and self._must_skip():
             _logger.info(
                 "({}: {}) It must be skipped".format(self.work.model_name, external_id)
             )

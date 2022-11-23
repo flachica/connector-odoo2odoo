@@ -32,6 +32,8 @@ class OdooSaleOrder(models.Model):
         ),
     ]
 
+    # Can't seem to bind picking_ids in this model/method
+    # Compute be will called in _set_state
     def _compute_import_state(self):
         for order_id in self:
             waiting = len(
@@ -61,7 +63,6 @@ class OdooSaleOrder(models.Model):
             ("done", "Done"),
         ],
         default="waiting",
-        compute=_compute_import_state,
     )
 
     def name_get(self):
@@ -87,6 +88,7 @@ class OdooSaleOrder(models.Model):
         # All data was imported. Solve the state problem and all is done
         self._set_sale_state()
         self._set_pickings_state()
+        self._compute_import_state()
 
     def _set_pickings_state(self):
         for picking_id in self.picking_ids:
@@ -99,7 +101,7 @@ class OdooSaleOrder(models.Model):
         if self.backend_state == self.odoo_id.state:
             return
 
-        if self.backend_state == "done" and self.odoo_id.state == "sale":
+        if self.backend_state in ("done", "progress") and self.odoo_id.state == "sale":
             return
         if self.backend_state == "waiting":
             self.odoo_id.action_confirm()
@@ -107,7 +109,7 @@ class OdooSaleOrder(models.Model):
             self.odoo_id.action_confirm()
         elif self.backend_state == "approved":
             self.odoo_id.action_confirm()
-        elif self.backend_state == "done":
+        elif self.backend_state in ("done", "progress"):
             self.odoo_id.action_confirm()
         elif "except" in self.backend_state:
             self.odoo_id.action_done()

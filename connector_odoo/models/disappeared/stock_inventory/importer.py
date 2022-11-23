@@ -104,23 +104,19 @@ class StockInventoryDisappearedImporter(Component):
         if inventory.move_ids:
             delayed_line_ids = []
             for line_id in inventory.move_ids:
-                stock_move_model = self.env["odoo.stock.move"]
-                if backend_record.delayed_import_lines:
-                    stock_move_model = stock_move_model.with_delay()
+                stock_move_model = self.env["odoo.stock.move"].with_delay()
                 delayed_line_id = stock_move_model.import_record(
                     backend_record,
                     line_id.id,
                     force=True,
                     picking_id=binding.odoo_id.id,
                 )
-                if backend_record.delayed_import_lines:
-                    delayed_line_id = self.env["queue.job"].search(
-                        [("uuid", "=", delayed_line_id.uuid)]
-                    )
-                    delayed_line_ids.append(delayed_line_id.id)
-            if backend_record.delayed_import_lines:
-                binding.queue_job_ids = [
-                    (6, 0, (delayed_line_ids + binding.queue_job_ids.ids))
-                ]
-            else:
-                self.with_delay()._set_inventory_state()
+                delayed_line_id = self.env["queue.job"].search(
+                    [("uuid", "=", delayed_line_id.uuid)]
+                )
+                delayed_line_ids.append(delayed_line_id.id)
+            binding.queue_job_ids = [
+                6,
+                0,
+                (delayed_line_ids + binding.queue_job_ids.ids),
+            ]

@@ -53,7 +53,6 @@ class OdooStockPicking(models.Model):
             ("done", "Done"),
         ],
         default="waiting",
-        compute=_compute_import_state,
     )
 
     def resync(self):
@@ -81,6 +80,7 @@ class OdooStockPicking(models.Model):
             else:
                 for move_id in self.move_lines:
                     move_id.quantity_done = move_id.product_uom_qty
+                self.odoo_id.action_set_quantities_to_reservation()
                 self.odoo_id.button_validate()
                 if self.state != "done":
                     raise STATE_ERROR
@@ -92,6 +92,7 @@ class OdooStockPicking(models.Model):
             self.odoo_id.action_confirm()
         elif self.backend_state == "approved":
             self.odoo_id.action_approve()
+        self._compute_import_state()
 
 
 class StockPicking(models.Model):
