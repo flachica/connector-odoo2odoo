@@ -62,7 +62,6 @@ class StockPickingImporter(Component):
             self._import_dependency(
                 move_id.location_dest_id.id, "odoo.stock.location", force=force
             )
-            break
         if self.odoo_record["partner_id"]:
             self._import_dependency(
                 self.odoo_record["partner_id"].id, "odoo.res.partner", force=force

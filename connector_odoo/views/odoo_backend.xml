@@ -27,7 +27,7 @@
                         type="object"
                         class="oe_highlight"
                         attrs="{'invisible':[('state', 'in', ['draft'])]}"
-                        string="Synchronize Base Datas"
+                        string="Synchronize Base Data"
                         help="Synchronize UOM, Categories, etc..."
                     />
             <button

@@ -32,13 +32,9 @@ class ProductPricelistBatchImporter(Component):
             filters,
             len(updated_ids),
         )
-        base_priority = 10
         for pricelist in updated_ids:
             pricelist_id = self.backend_adapter.read(pricelist)
-            job_options = {
-                "priority": base_priority + pricelist_id.parent_left or 0,
-            }
-            self._import_record(pricelist_id.id, job_options=job_options)
+            self._import_record(pricelist_id.id)
 
 
 class ProductPricelistImporter(Component):
@@ -97,7 +93,7 @@ class ProductPricelistItemBatchImporter(Component):
     For every pricelist item in the list, a delayed job is created.
     """
 
-    _name = "odoo.product.pricelist.batch.importer"
+    _name = "odoo.product.pricelist.item.batch.importer"
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.product.pricelist.item"]
 

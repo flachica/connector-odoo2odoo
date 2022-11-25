@@ -164,12 +164,12 @@ class OdooImporter(AbstractComponent):
                 return False
             if not last_remote_modification:
                 _logger.info(
-                    "Last remote write date not found. "
-                    "Skipping import of external_id {} - {}".format(
+                    "Last remote crate & write date not found. "
+                    "Import of external_id {} - {} forced!".format(
                         self.external_id, self.odoo_record
                     )
                 )
-                return True
+                return False
             return sync_date > last_remote_modification
         else:
             return False
@@ -272,7 +272,7 @@ class OdooImporter(AbstractComponent):
         must_continue = self._init_import(binding, external_id)
         if not must_continue:
             _logger.info(
-                "({}: {}) must no be imported!".format(
+                "({}: {}) should not be imported!".format(
                     self.work.model_name, external_id
                 )
             )
