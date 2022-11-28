@@ -66,15 +66,18 @@ class SaleOrderImporter(Component):
             ]:
                 self._import_dependency(partner_id.id, "odoo.res.partner", force=force)
         else:
-            for address_id in [
-                self.odoo_record.partner_shipping_id,
-                self.odoo_record.partner_invoice_id,
-            ]:
-                self._import_dependency(
-                    address_id.partner_id.id,
-                    "odoo.res.partner.address.disappeared",
-                    force=force,
-                )
+            self.env["odoo.res.partner.address.disappeared"].import_address(
+                self.backend_record,
+                self.odoo_record.partner_shipping_id.id,
+                self.odoo_record.partner_id.id,
+                force=force,
+            )
+            self.env["odoo.res.partner.address.disappeared"].import_address(
+                self.backend_record,
+                self.odoo_record.partner_invoice_id.id,
+                self.odoo_record.partner_id.id,
+                force=force,
+            )
 
     def _after_import(self, binding, force=False):
         res = super()._after_import(binding, force)

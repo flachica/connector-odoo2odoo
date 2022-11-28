@@ -30,34 +30,3 @@ class PartnerAddressDisappearedBatchImporter(Component):
         for external_id in external_ids:
             job_options = {"priority": 15}
             self._import_record(external_id, job_options=job_options, force=force)
-
-
-class PartnerAddressDisappearedImporter(Component):
-    _name = "odoo.res.partner.address.disappeared.importer"
-    _inherit = "odoo.importer"
-    _apply_on = ["odoo.res.partner.address.disappeared"]
-
-    def _init_import(self, binding, external_id):
-        address_model = self.work.odoo_api.api.get("res.partner.address")
-        address_ids = address_model.search(
-            [("partner_id", "=", external_id)], order="id"
-        )
-        total = len(address_ids)
-        _logger.info(
-            "{} Addresses found for external partner {}".format(total, external_id)
-        )
-        if address_ids:
-            i = 0
-            for address_id in address_ids:
-                i += 1
-                _logger.info(
-                    "Sending address {} of {} to be processed as a new job".format(
-                        i, total
-                    )
-                )
-                model = self.env["odoo.res.partner.address.disappeared"]
-                if self.backend_record.delayed_import_basic_data:
-                    model = model.with_delay()
-                model.import_address(self.backend_record, address_id, external_id)
-        super()._init_import(binding, external_id)
-        return False
