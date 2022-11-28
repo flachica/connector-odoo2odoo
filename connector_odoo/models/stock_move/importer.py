@@ -63,6 +63,8 @@ class StockMoveImporter(Component):
         res = super()._after_import(binding, force)
         pending = binding.picking_id.queue_job_ids.filtered(
             lambda x: x.state != "done" and x.args[1] != self.odoo_record.id
+            if len(x.args) > 1
+            else True
         )
         if "failed" in pending.mapped("state"):
             _logger.error(
