@@ -91,11 +91,11 @@ class OdooSaleOrder(models.Model):
         self._compute_import_state()
 
     def _set_pickings_state(self):
-        for picking_id in self.picking_ids:
-            binding_picking = self.env["odoo.stock.picking"].search(
-                [("odoo_id", "=", picking_id.id)]
-            )
-            binding_picking._set_state()
+        picking_ids = self.env["odoo.stock.picking"].search(
+            [("sale_id", "=", self.odoo_id.id)], order="external_id"
+        )
+        for picking_id in picking_ids:
+            picking_id._set_state()
 
     def _set_sale_state(self):
         if self.backend_state == self.odoo_id.state:
