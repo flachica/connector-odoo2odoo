@@ -63,12 +63,13 @@ class OdooStockPicking(models.Model):
                 self.backend_id, self.external_id, force=True
             )
 
-    def _set_state(self):
-        STATE_ERROR = ValidationError(
-            _('Can not set state to "{}" for picking "{}"').format(
-                self.backend_state, self.name
-            )
+    def _raise_state_error(self):
+        message = _('Can not set state to "{}" for picking "{}"').format(
+            self.backend_state, self.name
         )
+        raise ValidationError(message)
+
+    def _set_state(self):
         if self.backend_state == self.odoo_id.state:
             return
 
@@ -76,14 +77,14 @@ class OdooStockPicking(models.Model):
             if self.state != "assigned":
                 self.odoo_id.action_confirm()
             if self.state != "assigned":
-                raise STATE_ERROR
+                return self._raise_state_error()
             else:
                 for move_id in self.move_lines:
                     move_id.quantity_done = move_id.product_uom_qty
                 self.odoo_id.action_set_quantities_to_reservation()
                 self.odoo_id.button_validate()
                 if self.state != "done":
-                    raise STATE_ERROR
+                    return self._raise_state_error()
         elif self.backend_state == "auto":
             self.odoo_id.action_confirm()
         elif self.backend_state == "cancel":

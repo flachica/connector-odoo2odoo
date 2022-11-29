@@ -145,35 +145,6 @@ class OdooPickingMapper(Component):
         picking_id = self.env["stock.picking"].search([("name", "=", record.name)])
         if picking_id:
             return {"odoo_id": picking_id.id}
-        if (record.sale_id or record.purchase_id) and record.move_lines:
-            # If picking is created when changing state importing sale/purchase order
-            binder = (
-                self.binder_for("odoo.sale.order")
-                if record.sale_id
-                else self.binder_for("odoo.purchase.order")
-            )
-            document_id = binder.to_internal(
-                record.sale_id.id if record.sale_id else record.purchase_id.id,
-                unwrap=True,
-            )
-            move_id = False
-            for move in record.move_lines:
-                move_id = move
-                break
-            picking_type_id = self.get_picking_type_from_external_locations(
-                "picking", record, move_id.location_id, move_id.location_dest_id
-            )
-            existing_picking_id = document_id.picking_ids.filtered(
-                lambda x: x.picking_type_id == picking_type_id
-            )
-            # Need to link picking to sale/purchase order
-            # if was generated when confirming sale/purchase order
-            if (
-                existing_picking_id
-                and existing_picking_id.bind_ids.backend_state == "done"
-            ):
-                return {"odoo_id": existing_picking_id.id}
-        return {}
 
     def get_picking_type_from_external_locations(
         self, model_label, record, location_id, location_dest_id
