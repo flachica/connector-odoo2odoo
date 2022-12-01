@@ -67,6 +67,11 @@ class StockPickingImporter(Component):
                 self.odoo_record["partner_id"].id, "odoo.res.partner", force=force
             )
 
+        if self.odoo_record["carrier_id"]:
+            self._import_dependency(
+                self.odoo_record["carrier_id"].id, "odoo.delivery.carrier", force=force
+            )
+
     def _after_import(self, binding, force=False):
         res = super()._after_import(binding, force)
         if self.odoo_record.move_lines:
@@ -257,3 +262,10 @@ class OdooPickingMapper(Component):
             binder = self.binder_for("odoo.res.partner")
             partner_id = binder.to_internal(record["partner_id"].id, unwrap=True)
             return {"partner_id": partner_id.id if partner_id else False}
+
+    @mapping
+    def carrier_id(self, record):
+        if record["carrier_id"]:
+            binder = self.binder_for("odoo.delivery.carrier")
+            carrier_id = binder.to_internal(record["carrier_id"].id, unwrap=True)
+            return {"carrier_id": carrier_id.id if carrier_id else False}

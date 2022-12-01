@@ -20,6 +20,7 @@
         "connector_base_product",
         "sale",
         "purchase_exception",
+        "delivery",
     ],
     "data": [
         "data/cron.xml",
@@ -50,6 +51,7 @@
         "views/stock_move.xml",
         "views/stock_inventory.xml",
         "views/sale_order.xml",
+        "views/delivery_carrier.xml",
     ],
     "demo": [],
     "qweb": [],

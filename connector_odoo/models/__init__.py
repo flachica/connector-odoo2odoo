@@ -26,3 +26,4 @@ from . import stock_location
 from . import mapping_models
 from . import stock_picking
 from . import stock_move
+from . import delivery_carrier

@@ -313,4 +313,17 @@
         action="action_odoo_sale_order"
     />
 
+    <record id="action_odoo_delivery_carrier" model="ir.actions.act_window">
+        <field name="name">Odoo Carriers</field>
+        <field name="res_model">odoo.delivery.carrier</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="menu_odoo_delivery_carrier"
+        name="External Carriers"
+        parent="menu_odoo_external_objects"
+        action="action_odoo_delivery_carrier"
+    />
+
 </odoo>
