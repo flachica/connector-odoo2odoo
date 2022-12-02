@@ -100,9 +100,13 @@ class OdooSaleOrder(models.Model):
     def _set_sale_state(self):
         if self.backend_state == self.odoo_id.state:
             return
-
         if self.backend_state in ("done", "progress") and self.odoo_id.state == "sale":
             return
+
+        self.odoo_id.onchange_partner_shipping_id()
+        for line_id in self.odoo_id.order_line:
+            line_id._compute_tax_id()
+
         if self.backend_state == "waiting":
             self.odoo_id.action_confirm()
         elif self.backend_state == "confirmed":
