@@ -218,6 +218,19 @@
                                             />
                       </div>
                     </group>
+                    <group>
+                        <div
+                                            attrs="{'invisible': [('default_import_product', '!=', True)]}"
+                                        >
+                          <button
+                                                name="import_currencies"
+                                                type="object"
+                                                string="Import Currencies"
+                                                class="oe_highlight oe_inline"
+                                                nolabel="1"
+                                            />
+                        </div>
+                      </group>
                   </group>
                   <group name="prod_export_operations" string="Export operations">
 

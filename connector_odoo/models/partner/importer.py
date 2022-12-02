@@ -240,6 +240,16 @@ class PartnerImportMapper(Component):
             if currency:
                 return {"property_purchase_currency_id": currency.id}
 
+    @mapping
+    def property_product_pricelist(self, record):
+        if record.property_product_pricelist:
+            binder = self.binder_for("odoo.product.pricelist")
+            return {
+                "property_product_pricelist": binder.to_internal(
+                    record.property_product_pricelist.id, unwrap=True
+                ).id
+            }
+
 
 class PartnerImporter(Component):
     _name = "odoo.res.partner.importer"

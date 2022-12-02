@@ -430,11 +430,18 @@ class OdooBackend(models.Model):
         )
         return True
 
+    def import_currencies(self):
+        self._import_from_date("odoo.res.currency", "")
+        self._import_from_date("odoo.res.currency.rate", "")
+        return True
+
     def _import_from_date(self, model, from_date_field):
         import_start_time = datetime.now()
         filters = [("write_date", "<", fields.Datetime.to_string(import_start_time))]
         for backend in self:
-            from_date = backend[from_date_field]
+            from_date = False
+            if from_date_field:
+                from_date = backend[from_date_field]
             if from_date:
                 from_date = fields.Datetime.to_string(from_date)
                 filters.append(
@@ -444,17 +451,15 @@ class OdooBackend(models.Model):
                         from_date,
                     )
                 )
-            else:
-                from_date = None
             if self.version == "6.1":
                 self.env[model].with_delay().import_batch(
                     backend, [("write_date", "=", False)]
                 )
             self.env[model].with_delay().import_batch(backend, filters)
-
-        next_time = import_start_time - timedelta(seconds=IMPORT_DELTA_BUFFER)
-        next_time = fields.Datetime.to_string(next_time)
-        self.write({from_date_field: next_time})
+        if from_date_field:
+            next_time = import_start_time - timedelta(seconds=IMPORT_DELTA_BUFFER)
+            next_time = fields.Datetime.to_string(next_time)
+            self.write({from_date_field: next_time})
 
     def import_external_id(self, model, external_id, force, inmediate=False):
         model = self.env[model]
