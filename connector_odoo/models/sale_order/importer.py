@@ -169,6 +169,12 @@ class SaleOrderImportMapper(Component):
                 "partner_shipping_id": shipping_address_id.odoo_id.id,
             }
 
+    @mapping
+    def payment_term_id(self, record):
+        binder = self.binder_for("odoo.account.payment.term")
+        payment_term_id = binder.to_internal(record.payment_term.id, unwrap=True)
+        return {"payment_term_id": payment_term_id.id}
+
 
 class SaleOrderLineBatchImporter(Component):
     """Import the Odoo Sale Order Lines.

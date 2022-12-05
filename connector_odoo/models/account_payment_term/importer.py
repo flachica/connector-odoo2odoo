@@ -42,13 +42,12 @@ class PaymentTermImportMapper(Component):
 
 
 class PaymentTermImporter(Component):
-    _name = "odoo.res.user.importer"
+    _name = "odoo.account.payment.term.importer"
     _inherit = "odoo.importer"
-    _apply_on = ["odoo.account.payment.term"]
+    _apply_on = "odoo.account.payment.term"
 
-    def _import_dependencies(self, force=False):
-        """Import the dependencies for the record"""
-        _logger.info("Importing dependencies for external ID %s", self.external_id)
+    def _after_import(self, binding, force=False):
+        binding.line_ids.unlink()
         if self.odoo_record.line_ids:
             _logger.info("Importing lines")
             for line_id in self.odoo_record.line_ids:
@@ -58,7 +57,7 @@ class PaymentTermImporter(Component):
 
 
 class PaymentTermLineImporter(Component):
-    _name = "odoo.res.user.importer"
+    _name = "odoo.account.payment.term.line.importer"
     _inherit = "odoo.importer"
     _apply_on = ["odoo.account.payment.term.line"]
 
@@ -71,6 +70,14 @@ class PaymentTermLineImportMapper(Component):
     direct = [
         ("days", "days"),
     ]
+
+    @mapping
+    def payment_id(self, record):
+        return {
+            "payment_id": self.binder_for("odoo.account.payment.term")
+            .to_internal(record.payment_id.id, unwrap=True)
+            .id
+        }
 
     @mapping
     def value(self, record):

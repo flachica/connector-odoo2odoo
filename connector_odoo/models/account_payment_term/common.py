@@ -43,7 +43,7 @@ class PaymentTerm(models.Model):
 class AccountPaymentTermLine(models.Model):
     _name = "odoo.account.payment.term.line"
     _inherit = "odoo.binding"
-    _inherits = {"account.payment.term": "odoo_id"}
+    _inherits = {"account.payment.term.line": "odoo_id"}
     _description = "External Payment Term Line"
 
     _sql_constraints = [
@@ -76,13 +76,12 @@ class PaymentTermLine(models.Model):
 class PaymentTermAdapter(Component):
     _name = "odoo.account.payment.term.adapter"
     _inherit = "odoo.adapter"
-    _apply_on = ["odoo.account.payment.term", "account.payment.term.line"]
-
+    _apply_on = "odoo.account.payment.term"
     _odoo_model = "account.payment.term"
 
 
-class PaymentTermListener(Component):
-    _name = "account.payment.term.listener"
-    _inherit = "base.connector.listener"
-    _apply_on = ["account.payment.term", "account.payment.term.line"]
-    _usage = "event.listener"
+class PaymentTermLineAdapter(Component):
+    _name = "odoo.account.payment.term.line.adapter"
+    _inherit = "odoo.adapter"
+    _apply_on = "odoo.account.payment.term.line"
+    _odoo_model = "account.payment.term.line"
