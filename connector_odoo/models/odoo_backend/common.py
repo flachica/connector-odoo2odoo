@@ -327,6 +327,7 @@ class OdooBackend(models.Model):
                     "odoo.uom.uom",
                     "odoo.product.attribute",
                     "odoo.product.attribute.value",
+                    "odoo.account.payment.term",
                 ):
                     # import directly, do not delay because this
                     # is a fast operation, a direct return is fine

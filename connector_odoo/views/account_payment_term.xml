@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_payment_term_connector_form" model="ir.ui.view">
+        <field name="name">account.payment.term.form</field>
+        <field name="model">account.payment.term</field>
+        <field name="inherit_id" ref="account.view_payment_term_form" />
+        <field name="arch" type="xml">
+            <field name="line_ids" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <xpath expr="//sheet" position="inside">
+                <notebook>
+                    <page name="terms" string="Terms">
+                        <field name="line_ids" position="move" />
+                    </page>
+                    <page name="connector" string="Connector">
+                        <group string="Odoo Bindings">
+                            <field name="bind_ids" readonly="1" nolabel="1" />
+                        </group>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="odoo_payment_term_tree_view" model="ir.ui.view">
+        <field name="name">odoo.account.payment.term.tree</field>
+        <field name="model">odoo.account.payment.term</field>
+
+        <field name="arch" type="xml">
+            <tree>
+                <field name="display_name" />
+                <field name="odoo_id" />
+                <field name="backend_id" />
+                <field name="external_id" />
+                <button name="resync" type="object" string="Resync" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="odoo_payment_term_form_view" model="ir.ui.view">
+        <field name="name">odoo.account.payment.term.form</field>
+        <field name="model">odoo.account.payment.term</field>
+
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="resync" type="object" string="Resync" />
+                </header>
+                <sheet>
+
+                    <div class="oe_title">
+
+                        <h1>
+                            <field name="name" readonly="1" />
+                        </h1>
+                        <group>
+                            <field name="odoo_id" readonly="0" />
+                            <field name="backend_id" readonly="1" />
+                            <field name="external_id" readonly="0" />
+                        </group>
+                    </div>
+                </sheet>
+
+            </form>
+        </field>
+    </record>
+
+    <record id="view_odoo_payment_term_search" model="ir.ui.view">
+        <field name="name">odoo.account.payment.term.search</field>
+        <field name="model">odoo.account.payment.term</field>
+        <field eval="100" name="priority" />
+        <field name="arch" type="xml">
+            <search string="Search">
+                <field name="name" />
+                <field name="external_id" />
+                <field name="odoo_id" />
+                <field name="backend_id" />
+            </search>
+        </field>
+    </record>
+
+</odoo>

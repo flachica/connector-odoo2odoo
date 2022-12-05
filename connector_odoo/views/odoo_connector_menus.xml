@@ -326,4 +326,17 @@
         action="action_odoo_delivery_carrier"
     />
 
+    <record id="action_odoo_payment_term" model="ir.actions.act_window">
+        <field name="name">Odoo Payment term</field>
+        <field name="res_model">odoo.account.payment.term</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="menu_odoo_payment_term"
+        name="External Payment Term"
+        parent="menu_odoo_external_objects"
+        action="action_odoo_payment_term"
+    />
+
 </odoo>

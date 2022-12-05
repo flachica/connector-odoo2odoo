@@ -52,6 +52,7 @@
         "views/stock_inventory.xml",
         "views/sale_order.xml",
         "views/delivery_carrier.xml",
+        "views/account_payment_term.xml",
     ],
     "demo": [],
     "qweb": [],
