@@ -295,7 +295,7 @@ class OdooBackend(models.Model):
     @contextmanager
     def work_on(self, model_name, **kwargs):
         """
-        Place the connexion here regarding the documentation
+        Place the connection here regarding the documentation
         http://odoo-connector.com/api/api_components.html\
             #odoo.addons.component.models.collection.Collection
         """

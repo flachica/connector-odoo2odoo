@@ -86,9 +86,44 @@ class OdooSaleOrder(models.Model):
     def _set_state(self):
         _logger.info("Setting state for %s", self)
         # All data was imported. Solve the state problem and all is done
+        self._set_price_unit()
         self._set_sale_state()
         self._set_pickings_state()
         self._compute_import_state()
+
+    def _set_price_unit(self):
+        lines_without_price_unit = self.order_line.filtered(lambda l: not l.price_unit)
+        if lines_without_price_unit:
+            odoo_api = self.backend_id.get_connection().api
+            order_line_model = odoo_api.get("sale.order.line")
+            external_line_ids = order_line_model.search(
+                [
+                    ("order_id", "=", self.external_id),
+                ]
+            )
+            # Iterate object only can be iterated once
+            product_price_lines = []
+            for line_id in external_line_ids:
+                line_id = order_line_model.browse(line_id)
+                product_id = (
+                    self.env["odoo.product.product"]
+                    .search([("external_id", "=", line_id.product_id.id)])
+                    .odoo_id.id
+                )
+                if not product_id:
+                    continue
+                product_price_lines.append(
+                    {"product_id": product_id, "price_unit": line_id.price_unit}
+                )
+        for line_id in lines_without_price_unit:
+            for product_price_line in product_price_lines:
+                product_id = product_price_line["product_id"]
+                price_unit = product_price_line["price_unit"]
+                if not price_unit:
+                    continue
+                if line_id.product_id.id == product_id:
+                    line_id.price_unit = price_unit
+                    break
 
     def _set_pickings_state(self):
         picking_ids = self.env["odoo.stock.picking"].search(
@@ -103,9 +138,9 @@ class OdooSaleOrder(models.Model):
         if self.backend_state in ("done", "progress") and self.odoo_id.state == "sale":
             return
 
-        self.odoo_id.onchange_partner_shipping_id()
         for line_id in self.odoo_id.order_line:
             line_id._compute_tax_id()
+        self.odoo_id.onchange_partner_shipping_id()
 
         if self.backend_state == "waiting":
             self.odoo_id.action_confirm()

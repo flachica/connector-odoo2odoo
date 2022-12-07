@@ -56,12 +56,9 @@ class OdooStockPicking(models.Model):
     )
 
     def resync(self):
-        if self.backend_id.read_operation_from == "odoo":
-            raise NotImplementedError
-        else:
-            return self.with_delay().import_record(
-                self.backend_id, self.external_id, force=True
-            )
+        return self.with_delay().import_record(
+            self.backend_id, self.external_id, force=True
+        )
 
     def _raise_state_error(self):
         message = _('Can not set state to "{}" for picking "{}"').format(

@@ -15,7 +15,7 @@ class BatchUserExporter(Component):
     _apply_on = ["odoo.res.users"]
     _usage = "batch.exporter"
 
-    def run(self, filters=None, force=False):
+    def run(self, filters=None, force=False, job_options=None):
         loc_filter = ast.literal_eval(self.backend_record.local_user_domain_filter)
         filters += loc_filter
         user_ids = self.env["res.users"].search(filters)
@@ -44,7 +44,6 @@ class BatchUserExporter(Component):
             ]
         )
         for user in bind_ids:
-            job_options = {"max_retries": 0, "priority": 15}
             self._export_record(user, job_options=job_options)
 
 

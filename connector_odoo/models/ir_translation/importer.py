@@ -21,19 +21,6 @@ class IrTranslationBatchImporter(Component):
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.ir.translation"]
 
-    def run(self, filters=None, force=False):
-        """Run the synchronization"""
-
-        external_ids = self.backend_adapter.search(filters)
-        _logger.info(
-            "search for odoo Translation %s returned %s items",
-            filters,
-            len(external_ids),
-        )
-        for external_id in external_ids:
-            job_options = {"priority": 15}
-            self._import_record(external_id, job_options=job_options, force=force)
-
 
 class IrTranslationImportMapper(Component):
     _name = "odoo.ir.translation.import.mapper"

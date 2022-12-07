@@ -18,7 +18,7 @@ class StockInventoryDisappearedBatchImporter(Component):
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.stock.inventory.disappeared"]
 
-    def run(self, filters=None, force=False):
+    def run(self, filters=None, force=False, job_options=None):
         """Run the synchronization"""
         inventory_model = self.backend_record.get_connection().api.get(
             "stock.inventory"
@@ -31,7 +31,6 @@ class StockInventoryDisappearedBatchImporter(Component):
             len(external_ids),
         )
         for external_id in external_ids:
-            job_options = {"priority": 15}
             self._import_record(external_id, job_options=job_options, force=force)
 
 

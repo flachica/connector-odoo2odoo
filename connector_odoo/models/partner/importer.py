@@ -55,17 +55,6 @@ class PartnerBatchImporter(Component):
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.res.partner"]
 
-    def run(self, filters=None, force=False):
-        """Run the synchronization"""
-
-        external_ids = self.backend_adapter.search(filters)
-        _logger.info(
-            "search for odoo partner %s returned %s items", filters, len(external_ids)
-        )
-        for external_id in external_ids:
-            job_options = {"priority": 15}
-            self._import_record(external_id, job_options=job_options)
-
 
 class PartnerImportMapper(Component):
     _name = "odoo.res.partner.import.mapper"
@@ -82,6 +71,7 @@ class PartnerImportMapper(Component):
         ("company_type", "company_type"),
         ("zip", "zip"),
         ("delivery_margin", "delivery_margin"),
+        ("email", "email"),
     ]
 
     @mapping
@@ -306,28 +296,6 @@ class PartnerImporter(Component):
                 force=force,
             )
 
-        if (
-            self.odoo_record.property_product_pricelist_purchase
-            and self.odoo_record.property_product_pricelist_purchase.currency_id
-        ):
-            _logger.info("Importing supplier currency")
-            self._import_dependency(
-                self.odoo_record.property_product_pricelist_purchase.currency_id.id,
-                "odoo.res.currency",
-                force=force,
-            )
-
         result = super()._import_dependencies(force=force)
         _logger.info("Dependencies imported for external ID %s", self.external_id)
         return result
-
-    def _after_import(self, binding, force=False):
-        if self.backend_record.version == "6.1":
-            _logger.info(
-                "OpenERP detected, importing adresses for external ID %s",
-                self.external_id,
-            )
-            self.env["odoo.res.partner.address.disappeared"].with_delay().import_record(
-                self.backend_record, self.external_id
-            )
-        return super()._after_import(binding, force)

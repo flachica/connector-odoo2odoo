@@ -16,7 +16,7 @@ class BatchUomExporter(Component):
     _apply_on = ["odoo.uom.uom"]
     _usage = "batch.exporter"
 
-    def run(self, filters=None, force=False):
+    def run(self, filters=None, force=False, job_options=None):
         loc_filter = safe_eval(self.backend_record.local_uom_uom_domain_filter)
         filters += loc_filter
         uoms = self.env["uom.uom"].search(filters)
@@ -47,8 +47,8 @@ class BatchUomExporter(Component):
         )
         for uom in bind_ids:
             job_options = {
-                "max_retries": 0,
-                "priority": 15,
+                "max_retries": job_options.get("max_retries", 0),
+                "priority": job_options.get("priority", 15),
             }
             self._export_record(uom, job_options=job_options)
 

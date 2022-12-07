@@ -2,9 +2,12 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
 import logging
+from collections import namedtuple
+from datetime import datetime
 
 from odoo import _
 from odoo.exceptions import UserError
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 from odoo.addons.component.core import AbstractComponent
 
@@ -216,7 +219,7 @@ class GenericAdapter(AbstractComponent):
         )
 
     # pylint: disable=W8106,W0622
-    def read(self, id, attributes=None, model=None, context=None):
+    def read(self, id, attributes=None, model=None, fields=None, context=None):
         """Returns the information of a record
         :rtype: dict
         """
@@ -247,8 +250,14 @@ class GenericAdapter(AbstractComponent):
             else odoo_api.get(ext_model)
         )
         if context:
-            return model.with_context(**context).browse(arguments)
-        return model.browse(arguments)
+            model = model.with_context(**context)
+        if fields:
+            original_fields = fields
+            fields = [field.split(":")[0] for field in fields if field]
+            result = model.read(arguments, fields)
+            return self.dict_to_model(result, original_fields)
+        else:
+            return model.browse(arguments)
 
     def create(self, data):
         ext_model = self._odoo_model
@@ -286,3 +295,27 @@ class GenericAdapter(AbstractComponent):
         object_id = model.browse(arguments)
         # TODO: Check the write implementation of odoorpc
         return object_id.write(data)
+
+    def dict_to_model(self, data, fields):
+        OdooStruct = namedtuple(
+            "".join([word.capitalize() for word in self._odoo_model.split(".")]),
+            data.keys(),
+        )
+        result = OdooStruct(**data)
+        result_dict = result._asdict()
+        for field in fields:
+            field_type = field.split(":")[1] if ":" in field else None
+            field_name = field.split(":")[0] if ":" in field else field
+            to_datetime = field_type == "datetime" and field_name in result_dict.keys()
+            if to_datetime and result_dict[field_name] != "0000-00-00 00:00:00":
+                result = result._replace(
+                    **{
+                        field.split(":")[0]: datetime.strptime(
+                            result_dict[field.split(":")[0]],
+                            DEFAULT_SERVER_DATETIME_FORMAT,
+                        )
+                    }
+                )
+            elif to_datetime:
+                result = result._replace(**{field.split(":")[0]: None})
+        return result

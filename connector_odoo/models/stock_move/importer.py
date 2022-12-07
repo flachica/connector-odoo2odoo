@@ -13,22 +13,6 @@ class StockMoveBatchImporter(Component):
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.stock.move"]
 
-    def run(self, filters=None, force=False):
-        """Run the synchronization"""
-
-        updated_ids = self.backend_adapter.search(filters)
-        _logger.info(
-            "search for odoo stock move %s returned %s items",
-            filters,
-            len(updated_ids),
-        )
-        for move in updated_ids:
-            move_id = self.backend_adapter.read(move)
-            job_options = {
-                "priority": 10,
-            }
-            self._import_record(move_id.id, job_options=job_options)
-
 
 class StockMoveImporter(Component):
     _name = "odoo.stock.move.importer"
@@ -87,7 +71,7 @@ class StockMoveImporter(Component):
         # The last stock move of the last picking of purchase/sale
         if not pending and ok_purchase:
             purchase_binding = binding.picking_id.purchase_id.bind_ids[0]
-            state_job = purchase_binding.with_delay()._set_state()
+            state_job = purchase_binding.with_delay(priority=70)._set_state()
             state_job = self.env["queue.job"].search([("uuid", "=", state_job.uuid)])
             purchase_binding.queue_job_ids = [
                 (
@@ -101,7 +85,7 @@ class StockMoveImporter(Component):
             ]
         elif not pending and ok_sale:
             sale_binding = binding.picking_id.sale_id.bind_ids[0]
-            state_job = sale_binding.with_delay()._set_state()
+            state_job = sale_binding.with_delay(priority=70)._set_state()
             state_job = self.env["queue.job"].search([("uuid", "=", state_job.uuid)])
             sale_binding.queue_job_ids = [
                 (
@@ -118,7 +102,7 @@ class StockMoveImporter(Component):
             binder = self.binder_for("odoo.stock.picking")
             picking_binding = binder.to_internal(binding.picking_id.id)
             if picking_binding:
-                state_job = picking_binding.with_delay()._set_state()
+                state_job = picking_binding.with_delay(priority=70)._set_state()
                 state_job = self.env["queue.job"].search(
                     [("uuid", "=", state_job.uuid)]
                 )

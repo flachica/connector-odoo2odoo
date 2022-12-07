@@ -32,6 +32,7 @@ class OdooImporter(AbstractComponent):
     _inherit = ["base.importer", "base.odoo.connector"]
     _usage = "record.importer"
 
+    # TODO: Define fields to import to avoid to import all fields and reduce rcp calls
     def __init__(self, work_context):
         super(OdooImporter, self).__init__(work_context)
         self.external_id = None
@@ -114,7 +115,7 @@ class OdooImporter(AbstractComponent):
         Import of dependencies can be done manually or by calling
         :meth:`_import_dependency` for each dependency.
         """
-        return
+        return {}
 
     def _map_data(self):
         """Returns an instance of
@@ -308,10 +309,13 @@ class OdooImporter(AbstractComponent):
         _logger.info(
             "Importing dependencies ({}: {})".format(self.work.model_name, external_id)
         )
-        self._import_dependencies(force=force)
+        # To avoid to access fields when creating/updating in destination
+        # browse_record throw a xmlrpc read operation accessing to any attribute
+        dependencies_values = self._import_dependencies(force=force)
 
         _logger.info("Mapping data ({}: {})".format(self.work.model_name, external_id))
         map_record = self._map_data()
+        map_record._dependencies_values = dependencies_values
 
         if binding:
             record = self._update_data(map_record)
@@ -342,13 +346,18 @@ class BatchImporter(AbstractComponent):
     _inherit = ["base.importer", "base.odoo.connector"]
     _usage = "batch.importer"
 
-    def run(self, filters=None, force=False):
+    def run(self, filters=None, force=False, job_options=None):
         """Run the synchronization"""
         record_ids = self.backend_adapter.search(filters)
+        _logger.info(
+            "search for {} with filter {} returned {} items".format(
+                self.model._name, filters, len(record_ids)
+            )
+        )
         for record_id in record_ids:
-            self._import_record(record_id)
+            self._import_record(record_id, force=force, job_options=job_options)
 
-    def _import_record(self, external_id, force=False):
+    def _import_record(self, external_id, force=False, job_options=None):
         """Import a record directly or delay the import of the record.
 
         Method to implement in sub-classes.

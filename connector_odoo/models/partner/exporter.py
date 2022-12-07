@@ -18,7 +18,7 @@ class BatchPartnerExporter(Component):
     _apply_on = ["odoo.res.partner"]
     _usage = "batch.exporter"
 
-    def run(self, filters=None, force=False):
+    def run(self, filters=None, force=False, job_options=None):
         loc_filter = ast.literal_eval(self.backend_record.local_partner_domain_filter)
         filters += loc_filter
         partner_ids = self.env["res.partner"].search(filters)
@@ -47,7 +47,6 @@ class BatchPartnerExporter(Component):
             ]
         )
         for partner in bind_ids:
-            job_options = {"max_retries": 0, "priority": 15}
             self._export_record(partner, job_options=job_options)
 
 

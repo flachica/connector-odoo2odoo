@@ -23,23 +23,6 @@ class SaleOrderBatchImporter(Component):
     _apply_on = ["odoo.sale.order"]
     _usage = "batch.importer"
 
-    def run(self, filters=None, force=False):
-        """Run the synchronization"""
-
-        updated_ids = self.backend_adapter.search(filters)
-        _logger.info(
-            "search for odoo sale orders %s returned %s items",
-            filters,
-            len(updated_ids),
-        )
-        base_priority = 10
-        for order in updated_ids:
-            order_id = self.backend_adapter.read(order)
-            job_options = {
-                "priority": base_priority,
-            }
-            self._import_record(order_id.id, job_options=job_options)
-
 
 class SaleOrderImporter(Component):
     _name = "odoo.sale.order.importer"
@@ -56,35 +39,55 @@ class SaleOrderImporter(Component):
 
     def _import_dependencies(self, force=False):
         """Import the dependencies for the record"""
-        self._import_dependency(
-            self.odoo_record.partner_id.id, "odoo.res.partner", force=force
+        sale_model = self.backend_record.get_connection().api.get("sale.order")
+        order_id = sale_model.read(
+            self.odoo_record.id,
+            fields=["partner_id", "partner_shipping_id", "partner_invoice_id"],
         )
+        partner_id = order_id["partner_id"][0]
+        partner_shipping_id = order_id["partner_shipping_id"][0]
+        partner_invoice_id = order_id["partner_invoice_id"][0]
+        self._import_dependency(partner_id, "odoo.res.partner", force=force)
+        if self.odoo_record.payment_term:
+            self._import_dependency(
+                self.odoo_record.payment_term.id,
+                "odoo.account.payment.term",
+                force=force,
+            )
         if self.backend_record.version != "6.1":
             for partner_id in [
-                self.odoo_record.partner_shipping_id,
-                self.odoo_record.partner_invoice_id,
+                partner_shipping_id,
+                partner_invoice_id,
             ]:
-                self._import_dependency(partner_id.id, "odoo.res.partner", force=force)
+                self._import_dependency(partner_id, "odoo.res.partner", force=force)
         else:
             self.env["odoo.res.partner.address.disappeared"].import_address(
                 self.backend_record,
-                self.odoo_record.partner_shipping_id.id,
-                self.odoo_record.partner_id.id,
+                partner_shipping_id,
+                partner_id,
                 force=force,
             )
-            self.env["odoo.res.partner.address.disappeared"].import_address(
-                self.backend_record,
-                self.odoo_record.partner_invoice_id.id,
-                self.odoo_record.partner_id.id,
-                force=force,
-            )
+            if partner_invoice_id != partner_shipping_id:
+                self.env["odoo.res.partner.address.disappeared"].import_address(
+                    self.backend_record,
+                    partner_invoice_id,
+                    partner_id,
+                    force=force,
+                )
+        return {
+            "partner_id": partner_id,
+            "partner_shipping_id": partner_shipping_id,
+            "partner_invoice_id": partner_invoice_id,
+        }
 
     def _after_import(self, binding, force=False):
         res = super()._after_import(binding, force)
         if self.odoo_record.order_line:
             delayed_line_ids = []
             for line_id in self.odoo_record.order_line:
-                order_line_model = self.env["odoo.sale.order.line"].with_delay()
+                order_line_model = self.env["odoo.sale.order.line"].with_delay(
+                    priority=45
+                )
                 delayed_line_id = order_line_model.import_record(
                     self.backend_record, line_id.id, force
                 )
@@ -143,37 +146,29 @@ class SaleOrderImportMapper(Component):
         return {"pricelist_id": pricelist_id.id}
 
     @mapping
-    def partner_id(self, record):
-        binder = self.binder_for("odoo.res.partner")
-        if self.backend_record.version != "6.1":
-            return {
-                "partner_id": binder.to_internal(record.partner_id.id, unwrap=True).id,
-                "partner_invoice_id": binder.to_internal(
-                    record.partner_invoice_id.id, unwrap=True
-                ).id,
-                "partner_shipping_id": binder.to_internal(
-                    record.partner_shipping_id.id, unwrap=True
-                ).id,
-            }
-        else:
-            binder_address = self.binder_for("odoo.res.partner.address.disappeared")
-            invoice_address_id = binder_address.to_internal(
-                record.partner_invoice_id.id
-            )
-            shipping_address_id = binder_address.to_internal(
-                record.partner_shipping_id.id
-            )
-            return {
-                "partner_id": binder.to_internal(record.partner_id.id, unwrap=True).id,
-                "partner_invoice_id": invoice_address_id.odoo_id.id,
-                "partner_shipping_id": shipping_address_id.odoo_id.id,
-            }
-
-    @mapping
     def payment_term_id(self, record):
-        binder = self.binder_for("odoo.account.payment.term")
-        payment_term_id = binder.to_internal(record.payment_term.id, unwrap=True)
-        return {"payment_term_id": payment_term_id.id}
+        if record.payment_term:
+            binder = self.binder_for("odoo.account.payment.term")
+            payment_term_id = binder.to_internal(record.payment_term.id, unwrap=True)
+            return {"payment_term_id": payment_term_id.id}
+
+    def finalize(self, map_record, values):
+        partner_id = map_record._dependencies_values.get("partner_id")
+        partner_shipping_id = map_record._dependencies_values.get("partner_shipping_id")
+        partner_invoice_id = map_record._dependencies_values.get("partner_invoice_id")
+        partner_binder = self.binder_for("odoo.res.partner")
+        partner_id = partner_binder.to_internal(partner_id)
+        if self.backend_record.version == "6.1":
+            binder_address = self.binder_for("odoo.res.partner.address.disappeared")
+            partner_shipping_id = binder_address.to_internal(partner_shipping_id)
+            partner_invoice_id = binder_address.to_internal(partner_invoice_id)
+        else:
+            partner_shipping_id = partner_binder.to_internal(partner_shipping_id)
+            partner_invoice_id = partner_binder.to_internal(partner_invoice_id)
+        values["partner_id"] = partner_id.odoo_id.id
+        values["partner_shipping_id"] = partner_shipping_id.odoo_id.id
+        values["partner_invoice_id"] = partner_invoice_id.odoo_id.id
+        return values
 
 
 class SaleOrderLineBatchImporter(Component):
@@ -185,22 +180,6 @@ class SaleOrderLineBatchImporter(Component):
     _name = "odoo.sale.order.line.batch.importer"
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.sale.order.item"]
-
-    def run(self, filters=None, force=False):
-        """Run the synchronization"""
-
-        updated_ids = self.backend_adapter.search(filters)
-        _logger.info(
-            "search for odoo sale orders %s returned %s items",
-            filters,
-            len(updated_ids),
-        )
-        for order in updated_ids:
-            order_id = self.backend_adapter.read(order)
-            job_options = {
-                "priority": 10,
-            }
-            self._import_record(order_id.id, job_options=job_options)
 
 
 class SaleOrderLineImporter(Component):
@@ -238,7 +217,7 @@ class SaleOrderLineImporter(Component):
             )
             if not len(binding.picking_ids):
                 binding._set_state()
-            self.env["odoo.stock.picking"].with_delay().import_batch(
+            self.env["odoo.stock.picking"].with_delay(priority=60).import_batch(
                 self.backend_record,
                 [("sale_id", "=", self.odoo_record.order_id.id)],
             )

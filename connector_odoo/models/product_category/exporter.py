@@ -15,13 +15,16 @@ class BatchProductCategoryExporter(Component):
     _apply_on = ["odoo.product.category"]
     _usage = "batch.exporter"
 
-    def run(self, filters=None, force=False):
+    def run(self, filters=None, force=False, job_options=None):
         filters += [("backend_id", "=", self.backend_record.id)]
         prod_ids = self.env["odoo.product.category"].search(filters)
+        base_priority = 5
+        if "priority" in job_options.keys():
+            base_priority = job_options["priority"]
         for prod in prod_ids:
             job_options = {
-                "max_retries": 0,
-                "priority": 5 + prod.odoo_id.parent_left,
+                "max_retries": job_options.get("max_retries", 0),
+                "priority": base_priority + prod.odoo_id.parent_left,
             }
             self._export_record(prod, job_options=job_options)
 

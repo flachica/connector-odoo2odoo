@@ -17,22 +17,6 @@ class StockPickingBatchImporter(Component):
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.stock.picking"]
 
-    def run(self, filters=None, force=False):
-        """Run the synchronization"""
-        external_ids = self.backend_adapter.search(
-            filters,
-        )
-        _logger.info(
-            "search for odoo Warehouse %s returned %s items",
-            filters,
-            len(external_ids),
-        )
-        for external_id in external_ids:
-            job_options = {
-                "priority": 15,
-            }
-            self._import_record(external_id, job_options=job_options)
-
 
 class StockPickingImporter(Component):
     _name = "odoo.stock.picking.importer"
@@ -54,6 +38,7 @@ class StockPickingImporter(Component):
 
     def _import_dependencies(self, force=False):
         """Import the dependencies for the record"""
+        _logger.info("Importing locations")
         for move_id in self.odoo_record["move_lines"]:
             self._import_dependency(
                 move_id.location_id.id, "odoo.stock.location", force=force
@@ -62,22 +47,37 @@ class StockPickingImporter(Component):
             self._import_dependency(
                 move_id.location_dest_id.id, "odoo.stock.location", force=force
             )
-        if self.odoo_record["partner_id"]:
-            self._import_dependency(
-                self.odoo_record["partner_id"].id, "odoo.res.partner", force=force
-            )
+            break
+        _logger.info("Importing partner and carrier")
+        picking_model = self.backend_record.get_connection().api.get("stock.picking")
+        picking_id = picking_model.read(
+            self.odoo_record.id, fields=["partner_id", "carrier_id"]
+        )
+        partner_id = picking_id["partner_id"][0] if picking_id["partner_id"] else None
+        carrier_id = picking_id["carrier_id"][0] if picking_id["carrier_id"] else None
+        self._import_dependency(partner_id, "odoo.res.partner", force=force)
 
-        if self.odoo_record["carrier_id"]:
-            self._import_dependency(
-                self.odoo_record["carrier_id"].id, "odoo.delivery.carrier", force=force
-            )
+        if carrier_id:
+            self._import_dependency(carrier_id, "odoo.delivery.carrier", force=force)
+        return {"partner_id": partner_id}
+
+    def finalize(self, map_record, values):
+        partner_id = map_record._dependencies_values.get("partner_id")
+        if self.backend_record.version == "6.1":
+            binder_address = self.binder_for("odoo.res.partner.address.disappeared")
+            partner_id = binder_address.to_internal(partner_id)
+        if not partner_id:
+            partner_binder = self.binder_for("odoo.res.partner")
+            partner_id = partner_binder.to_internal(partner_id)
+        values["partner_id"] = partner_id.odoo_id.id
+        return values
 
     def _after_import(self, binding, force=False):
         res = super()._after_import(binding, force)
-        if self.odoo_record.move_lines:
+        if self.odoo_record.move_lines and binding.state not in ("done", "cancel"):
             delayed_line_ids = []
             for line_id in self.odoo_record.move_lines:
-                stock_move_model = self.env["odoo.stock.move"].with_delay()
+                stock_move_model = self.env["odoo.stock.move"].with_delay(priority=50)
                 delayed_line_id = stock_move_model.import_record(
                     self.backend_record, line_id.id, force=True
                 )
@@ -134,12 +134,17 @@ class StockPickingImporter(Component):
         return binding
 
 
-class OdooPickingMapper(Component):
+class StockPickingImportMapper(Component):
     _name = "odoo.stock.picking.mapper"
     _inherit = "odoo.import.mapper"
     _apply_on = "odoo.stock.picking"
 
-    direct = [("name", "name"), ("origin", "origin"), ("state", "backend_state")]
+    direct = [
+        ("name", "name"),
+        ("origin", "origin"),
+        ("state", "backend_state"),
+        ("date_done", "date_done"),
+    ]
 
     @mapping
     def odoo_id(self, record):
@@ -255,13 +260,6 @@ class OdooPickingMapper(Component):
             if picking_type_id.code == "outgoing"
             else supplier_loc.id
         }
-
-    @mapping
-    def partner_id(self, record):
-        if record["partner_id"]:
-            binder = self.binder_for("odoo.res.partner")
-            partner_id = binder.to_internal(record["partner_id"].id, unwrap=True)
-            return {"partner_id": partner_id.id if partner_id else False}
 
     @mapping
     def carrier_id(self, record):

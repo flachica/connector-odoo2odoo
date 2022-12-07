@@ -22,27 +22,6 @@ class PurchaseOrderBatchImporter(Component):
     _apply_on = ["odoo.purchase.order"]
     _usage = "batch.importer"
 
-    def _import_record(self, external_id, job_options=None, force=False):
-        """Delay a job for the import"""
-        return super()._import_record(external_id, job_options=job_options, force=force)
-
-    def run(self, filters=None, force=False):
-        """Run the synchronization"""
-
-        updated_ids = self.backend_adapter.search(filters)
-        _logger.info(
-            "search for odoo purchase orders %s returned %s items",
-            filters,
-            len(updated_ids),
-        )
-        base_priority = 10
-        for order in updated_ids:
-            order_id = self.backend_adapter.read(order)
-            job_options = {
-                "priority": base_priority,
-            }
-            self._import_record(order_id.id, job_options=job_options)
-
 
 class PurchaseOrderImporter(Component):
     _name = "odoo.purchase.order.importer"
@@ -179,22 +158,6 @@ class PurchaseOrderLineBatchImporter(Component):
     _name = "odoo.purchase.order.line.batch.importer"
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.purchase.order.item"]
-
-    def run(self, filters=None, force=False):
-        """Run the synchronization"""
-
-        updated_ids = self.backend_adapter.search(filters)
-        _logger.info(
-            "search for odoo purchase orders %s returned %s items",
-            filters,
-            len(updated_ids),
-        )
-        for order in updated_ids:
-            order_id = self.backend_adapter.read(order)
-            job_options = {
-                "priority": 10,
-            }
-            self._import_record(order_id.id, job_options=job_options)
 
 
 class PurchaseOrderLineImporter(Component):

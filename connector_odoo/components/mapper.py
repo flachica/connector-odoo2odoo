@@ -50,7 +50,7 @@ class OdooImportMapper(AbstractComponent):
         if callable(from_attr):
             return from_attr(self, record, to_attr)
 
-        value = record[from_attr] if hasattr(record, from_attr) else False
+        value = getattr(record, from_attr) if hasattr(record, from_attr) else False
         if not value:
             return False
 

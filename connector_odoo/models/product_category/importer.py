@@ -23,7 +23,7 @@ class ProductCategoryBatchImporter(Component):
     _inherit = "odoo.delayed.batch.importer"
     _apply_on = ["odoo.product.category"]
 
-    def run(self, filters=None, force=False):
+    def run(self, filters=None, force=False, job_options=None):
         """Run the synchronization"""
 
         updated_ids = self.backend_adapter.search(filters)
@@ -32,7 +32,7 @@ class ProductCategoryBatchImporter(Component):
             filters,
             len(updated_ids),
         )
-        base_priority = 10
+        base_priority = job_options.get("priority", 10)
         for cat in updated_ids:
             cat_id = self.backend_adapter.read(cat)
             job_options = {"priority": base_priority + cat_id.parent_left or 0}
